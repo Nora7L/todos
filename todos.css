@@ -49,7 +49,7 @@ ul {
 .page-top {
     width: 100%;
     height: 40px;
-    background-color: #db4c3f;
+    background-color: #27a32c;
 }
 
 .page-content {
@@ -87,7 +87,7 @@ ul {
 .task-count li {
     // padding-left: 10px;
     // flex: 1;
-    color: #dd4b39;
+    color: #27a32c;
 }
 
 .task-count li:nth-child(1){
