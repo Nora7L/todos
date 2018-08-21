@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>任务清单</title>
+    <link rel="stylesheet" href="./todos.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div class="box">
+        <div class="page-top">
+            <div class="page-content">
+                <h2>任务计划列表</h2>
+            </div>
+        </div>
+        <div class="main">
+            <h3 class="big-title">添加任务：</h3>
+            <!-- 使用事件修饰符 -->
+            <input 
+                type="text" 
+                class="task-input" 
+                placeholder="回车即可添加任务！" 
+                v-on:keyup.13="addTodo"
+                v-model="todo"
+            >
+            <ul class="task-count" v-show="list.length">
+                <!-- 任务未完成的个数 使用filter过滤 尽量不在模板里面写逻辑 这里可以使用计算属性-->
+                <li>
+                     <!-- list.filter(function(item){
+                            return !item.isChecked
+                        }).length -->
+                        
+                    <!-- 计算属性 -->
+                    {{noCheckLength}}个任务未完成
+                </li>
+                <li class="active">
+                    <a href="#" class="active">所有任务</a>
+                    <a href="#">未完成的任务</a>
+                    <a href="#">完成的任务</a>
+                </li>
+            </ul>
+            <h3 class="big-title">任务列表：</h3>
+            <div class="tasks">
+
+                <span class="no-task-tip" v-show="!list.length">还没有添加任何任务</span>
+                <ul class="todo-list">
+                    <li class="todo" :class="{completed:item.isChecked,editing: item === edtorTodos}" v-for="item in list">
+                        <div class="view">
+                            <input type="checkbox" class="toggle" v-model="item.isChecked">
+                            <label @dblclick="edtorTodo(item)">{{item.title}}</label>
+                            <button class="destroy" @click="deleteTodo(item)"></button>
+                        </div>
+                        <input 
+                            type="text" 
+                            class="edit"
+                            v-model="item.title" 
+                            v-focus="edtorTodos === item"
+                            @blur="edtorTodoed(item)"
+                            @keyup.13="edtorTodoed(item)"
+                            @keyup.esc="cancelTodo(item)"
+                        >
+                    </li>
+                </ul>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+
+       
+
+        //存取localStorage中的数据
+        var store = {
+            save(key,value){
+                localStorage.setItem(key,JSON.stringify(value))
+            },
+            fetch(key){
+                return JSON.parse(localStorage.getItem(key)) || []
+            }
+        }
+
+         var list = store.fetch('list');
+
+
+
+        // var list = [
+        //     {
+        //         title: "vue{{}}里面不可以写备注吗",
+        //         isChecked: false //false不选中 任务未完成，反之 
+        //     },
+        //     {
+        //         title: "计算属性进行记录",
+        //         isChecked: true
+        //     },
+        //     {
+        //         title: "不在模板里面写函数",
+        //         isChecked: false
+        //     },
+        //     {
+        //         title: "计算属性computed",
+        //         isChecked: false
+        //     },
+        // ];
+
+
+        var vm = new Vue({
+            el: ".main",
+            data:{
+                list: list,
+                todo: "",
+                edtorTodos: "", //记录正在编辑的数据
+                beforeTitle: "" //记录正在编辑的数据title 方便取消编辑
+            },
+            watch: {
+                //list为被监控对象 后面的函数是该对象执行的函数
+                //监控list这个属性 当其发生变化 执行该函数
+                //浅监控 只监控对象的第一层改变
+                // list:function(){
+                //     store.save('list',this.list)
+                // }
+
+                //深度监控数据改变
+                list:{
+                    handler:function () {
+                        store.save('list', this.list)
+                    },
+                    deep:true
+                }
+            },
+            // 计算属性
+            computed:{
+                //noCheckLength的值取决于函数的返回值
+                noCheckLength: function(){
+                    return this.list.filter(function(item){
+                        return !item.isChecked
+                    }).length
+                }
+            },
+            methods:{
+                //添加任务
+                addTodo(ev){ 
+
+                    //keyCode 13 回车
+                    //这里还可以使用事件修饰符
+
+                    //事件处理函数this指向当前根实例new
+                    // if (ev.keyCode === 13) {
+                        this.list.push({
+                            title: this.todo,
+                            isChecked: false
+                        })
+                        this.todo = "";
+                    // }
+                },
+                //删除任务
+                deleteTodo(todo){ 
+                    var index = this.list.indexOf(todo);
+                    this.list.splice(index,1)
+                },
+                //编辑任务
+                edtorTodo(todo){
+                    
+                    // 编辑任务时进行记录
+                    this.beforeTitle = todo.title;
+                    this.edtorTodos = todo;
+
+                },
+                //编辑完成
+                edtorTodoed(todo){
+                    this.edtorTodos = ""
+                },
+                //取消编辑
+                cancelTodo(todo){
+
+                    //把记录下来的值赋给title
+                    todo.title = this.beforeTitle;
+
+                    //操作数据 让div显示 input隐藏
+                    this.beforeTitle = '';
+                    this.edtorTodos = "";
+
+                }
+            },
+            // 自定义指令
+            directives: {
+                //获取焦点
+                "focus":{
+                    update(el,binding){
+                        // console.log(el)
+                        // value指的是表达式的true或者false
+                        // console.log(binding)
+
+                        if(binding.value){
+                            el.focus();
+                        }
+                    }
+                }
+            }
+        })
+    </script>
+    
+</body>
+</html>
