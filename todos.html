@@ -36,9 +36,9 @@
                     {{noCheckLength}}个任务未完成
                 </li>
                 <li class="active">
-                    <a href="#" class="active">所有任务</a>
-                    <a href="#">未完成的任务</a>
-                    <a href="#">完成的任务</a>
+                    <a href="#all">所有任务</a>
+                    <a href="#unfinished">未完成的任务</a>
+                    <a href="#finished">完成的任务</a>
                 </li>
             </ul>
             <h3 class="big-title">任务列表：</h3>
@@ -46,7 +46,7 @@
 
                 <span class="no-task-tip" v-show="!list.length">还没有添加任何任务</span>
                 <ul class="todo-list">
-                    <li class="todo" :class="{completed:item.isChecked,editing: item === edtorTodos}" v-for="item in list">
+                    <li class="todo" :class="{completed:item.isChecked,editing: item === edtorTodos}" v-for="item in filteredList">
                         <div class="view">
                             <input type="checkbox" class="toggle" v-model="item.isChecked">
                             <label @dblclick="edtorTodo(item)">{{item.title}}</label>
@@ -105,6 +105,23 @@
         //     },
         // ];
 
+        //区分 使用过滤的时候有三种情况 all finished unfinished
+        var filter = {
+            all:function(list){
+                return list;
+            },
+            finished: function(list){
+                return list.filter(function(item){
+                    return item.isChecked;
+                })
+            },
+            unfinished: function(list){
+                return list.filter(function(item){
+                    return !item.isChecked;
+                })
+            }
+        }
+
 
         var vm = new Vue({
             el: ".main",
@@ -112,7 +129,8 @@
                 list: list,
                 todo: "",
                 edtorTodos: "", //记录正在编辑的数据
-                beforeTitle: "" //记录正在编辑的数据title 方便取消编辑
+                beforeTitle: "", //记录正在编辑的数据title 方便取消编辑
+                visibility: "all" //通过这个属性值的变化对数据进行筛选
             },
             watch: {
                 //list为被监控对象 后面的函数是该对象执行的函数
@@ -137,6 +155,9 @@
                     return this.list.filter(function(item){
                         return !item.isChecked
                     }).length
+                },
+                filteredList:function(){
+                    return filter[this.visibility] ? filter[this.visibility](list) : list;
                 }
             },
             methods:{
@@ -200,6 +221,18 @@
                 }
             }
         })
+
+        //hashchange的值
+        function watchHashChange(){
+            var hash = window.location.hash.slice(1)
+            // console.log(hash)
+            vm.visibility = hash;
+        }
+        watchHashChange();
+        //对hash值的变化进行监听
+        window.addEventListener("hashchange",watchHashChange);
+            
+
     </script>
     
 </body>
